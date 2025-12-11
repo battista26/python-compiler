@@ -18,6 +18,8 @@ class BytecodeGenerator:
     def visit_Program(self, node):
         for stmt in node.statements:
             self.visit(stmt)
+    
+        self.instructions.append(('HALT', None))  # Program sonu
 
     def visit_Blok(self, node):
         for stmt in node.statements:

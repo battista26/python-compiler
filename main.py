@@ -74,11 +74,23 @@ if __name__ == "__main__":
     codegen.visit(ast)
     bytecode = codegen.get_bytecode()
 
-    # Print instructions nicely formatted
+    # instructionlari printleme
     for i, (op, arg) in enumerate(bytecode):
         arg_str = str(arg) if arg is not None else ""
         print(f"{i:<3}: {op:<15} {arg_str}")
     print("------------------------------\n")
+
+    # dosya olarak kaydetme (opsiyonel)
+    output_filename = "program.bytecode"
+    with open(output_filename, "w") as f:
+        for op, arg in bytecode:
+            # We save it in a simple format: "OPCODE,ARGUMENT"
+            # If arg is None, we just write "OPCODE"
+            if arg is not None:
+                f.write(f"{op},{arg}\n")
+            else:
+                f.write(f"{op}\n")
+    print(f"\n[INFO] Bytecode'{output_filename}' dosyasina kaydedildi.")
 
     print("\n--- Virtual Machine Execution ---")
     vm = VirtualMachine()

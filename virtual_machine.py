@@ -73,6 +73,10 @@ class VirtualMachine:
             elif opcode == 'JUMP_ABSOLUTE':
                 pc = arg
                 continue # Skip the pc += 1 at bottom
+
+            elif opcode == 'HALT':
+                print("Program sonlandi.")
+                break
             
             elif opcode == 'PRINT':
                 val = self.stack.pop()
