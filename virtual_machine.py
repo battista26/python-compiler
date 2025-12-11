@@ -1,7 +1,8 @@
 class VirtualMachine:
     def __init__(self):
         self.stack = []      
-        self.variables = {}  
+        self.variables = {}
+        self.return_stack = []
 
     def run(self, instructions):
         print("--- VM Calisiyor ---")
@@ -73,6 +74,37 @@ class VirtualMachine:
             elif opcode == 'JUMP_ABSOLUTE':
                 pc = arg
                 continue # Skip the pc += 1 at bottom
+
+            elif opcode == 'CALL':
+                # 1. Pop the target address (pushed by LOAD_VAR function_name)
+                target_addr = self.stack.pop()
+                
+                # 2. Save current PC (where we are now) so we can return later
+                self.return_stack.append(pc)
+                
+                # 3. Jump to function
+                pc = target_addr
+                continue
+
+            elif opcode == 'RETURN':
+                # 1. Check if we have somewhere to return to
+                if not self.return_stack:
+                     # If stack empty, we finished the main program (or function finished)
+                     break
+                
+                # 2. Restore the old PC
+                return_addr = self.return_stack.pop()
+                pc = return_addr
+                # We don't 'continue' here because we want to move to the NEXT instruction
+                # after the Call.
+
+            elif opcode == 'NEGATE':
+                val = self.stack.pop()
+                self.stack.append(-val)
+
+            elif opcode == 'NOT':
+                val = self.stack.pop()
+                self.stack.append(not val)
 
             elif opcode == 'HALT':
                 print("Program sonlandi.")

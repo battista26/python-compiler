@@ -1,15 +1,27 @@
-# Proje 2 Python'da Parser ve AST Oluşurulması
-Python'da PLY kullanılarak Lexer ve Parser projesi.
+# Proje 3 Bütün Compiler Tasarımı
+Python'da PLY (Python Lex-Yacc) kullanılarak tümüyle çalışan compiler projesi.  
+
+Lexical Analysis -> Syntax Analysis(AST) -> Semantic Analysis (Type Checking & Scoping) -> Bytecode Generation -> Stack-Tabanlı Virtual Machine ile execution
+
 ## Gereksinimler
-Python 3.x  
-PLY kütüphanesi
-`pip install ply`
+**Python 3.x**  
+**PLY kütüphanesi**  
+```bash
+pip install ply
+```
 
 ## Nasıl Çalıştırılır
 Kendiniz yazarak test etmek istiyorsanız.  
 ```
-python parser.py
+python main.py
 ```
+1. Bu komut çalıştırıldığında `code3` değerinin içindeki source kodu parse eder.  
+2. AST yapısı oluşturulur.
+3. Semantic analiz yapılır.
+4. Bytecode oluşturulur
+5. `program.bytecode` dosyasına bytecode kaydedilir.
+6. Bytecode Virtual Machine'de çalıştırılır.  
+(`program.bytecode` üzerinden okunma yapılmıyor, sadece test amaçlı oluşturulmakta)
 
 ---
 
@@ -18,19 +30,52 @@ Başka bir yöntem ise test case'leri çalıştırmak
 python test_cases.py
 ```
 ## Programlama Dilinin Syntax'i
-- Değişkenler (variables): `let` kelimesiyle bildirilebilir.  
-  - `let x = 10;`
-  - `let y = 25;`
-  - `let x;`
-- Fonksiyonlar: `def` kelimesiyle bildirilebilir.
-  - `def fonksiyonum(a, b) { ... }`
-  - `def topla(a, b) { return a + b }`
-- Kontrol akışı (control flow):
-  - `if (condition) { ... } else { ... }`
-  - `while (condition) { ... }`
-  - `for (let i=0; i<10; i=i+1) { ... }`
-- Veri tipleri: Integer(`11`), Float(`11.11`), Boolean(`True`, `False`)
-- Yorumlar: Satır `#` ile başlarsa yorum yazılabilir
+Veri tipleri:  
+  - `int` Integer sayılar (ör: `5`, `-10`)  
+  - `float` Float sayılar (ör: `3.14`)
+  - `bool` Bool değerleri (ör: `true`, `false`)
+  - `string` String literal (ör: `"Hello World"`)  
+
+Syntax örnekleri:  
+
+Artık değer bildiriminde veri tipi yazılması gerekiyor. `let` ile yazmayı kaldırdım. Bunun nedeni ise fonksiyon parametrelerinde veri tiplerinin belirtilmemesi karışıklığa sebep oluyor.  
+
+```
+int x = 11;
+float armistice = 11.11;
+string msg = "Nipah";
+bool isActive = true;
+```
+
+Fonksiyonlar:  
+
+return tipi ve parametreleri belirtilmek zorunda.
+```
+int topla(int a, int b) {
+  return a + b;
+}
+```
+
+Control Flow:
+```
+if (x > 5) {
+    x = x - 1;
+} else {
+    x = x + 1;
+}
+
+while (num > 0) {
+    num = num - 1;
+}
+
+for (i = 0; i < 10; i = i + 1) {
+    # Loop body
+}
+```
+# 4.yerde kaldım (Deepseek)
+
+
+Yorumlar: Satır `#` ile başlarsa yorum yazılabilir
 
 ## Gramer (EBNF)
 ```

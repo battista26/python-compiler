@@ -22,12 +22,12 @@ int x = 5;           # Redeclaration
 """
 
 code3 = """
-int num = 5;
-int fact = 1;
+bool neacaba = true;
 
-while (num > 0) {
-    fact = fact * num;
-    num = num - 1;
+if (neacaba) {
+    neacaba = false;
+} else {
+    neacaba = true;
 }
 """
 
