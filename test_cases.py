@@ -206,7 +206,7 @@ if __name__ == "__main__":
         int x = 20; # Shadowing outer x
         x = x + 1;  # 21
     }
-    # Outer x should still be 10
+    # Blok scope'u 
     """
     run_test("11. Scope Shadowing (Block Scope)", code_11, "valid", {"x": 10})
 

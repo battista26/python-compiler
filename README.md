@@ -77,7 +77,50 @@ Yorumlar: `#` ile başlayan satırlarla yorum yazılabilir
 ## İmplementasyon Detayları  
 Code generation'dan önce Semantic Analysis için Visitor Pattern (`semantic_analyzer.py`) kullanılıyor.
 - Symbol Table: (`symbol_table.py`) Scope'u stack olarak belirtir (Global -> Fonksiyon -> Blok)
-- Scope Resolution: `{ ... }` şeklindeki bloklardan çıkıldığında değişkenler sembol tablosundan kaldırılır.
+- Scope Resolution: `{ ... }` şeklindeki bloklardan çıkıldığında değişkenler sembol tablosundan kaldırılır.  
+(Not: Bu sadece fonksiyonlarda geçerli, normal bloklarda scope kaybolur.)
+```
+int x = 10;
+
+if (true) {
+    int x = 20;
+    x = x + 5;  # Gövdede x = 25
+}
+```
+
+Output'u (Normalde Scope Resolution'a göre 10 olmalı)
+```
+--- VM Calisiyor ---
+ > Defined x = 10
+ > Defined x = 20
+--- VM Bitti ---
+Final Global Memory: {'x': 25}
+```
+
+Ama fonksiyonlarda durum farklı
+```
+int x = 10;
+
+int topla(int a, int b) {
+    int x = 25;
+    return a + b + x;
+}
+int sonuc = topla(5, 15); # 5 + 15 + 25 = 45
+```
+
+Yukarıdaki gibi sonda `x = 25` olmasını beklerken `x = 10` değerini koruyor.
+```
+--- VM Calisiyor ---
+ > Defined x = 10
+ > Defined topla = 5
+ > Defined b = 15
+ > Defined a = 5
+ > Defined x = 25
+ > Defined sonuc = 45
+--- VM Bitti ---
+Final Global Memory: {'x': 10, 'topla': 5, 'sonuc': 45}
+```
+
 - Type Checking:
   - Değişkenler atanan değerlere uyuşmalı
   - Binary operasyonları (ör: `+`, `>`) uyumlu tipler arasında olmalı  

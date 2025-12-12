@@ -23,11 +23,12 @@ int x = 5;           # Redeclaration
 
 code3 = """
 int x = 10;
-if (x > 5) {
-    x = 20;
-} else {
-    x = 0;
+
+int topla(int a, int b) {
+    int x = 25;
+    return a + b + x;
 }
+int sonuc = topla(5, 15); # 5 + 15 + 25 = 45
 
 """
 

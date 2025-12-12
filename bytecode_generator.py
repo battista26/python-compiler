@@ -35,7 +35,7 @@ class BytecodeGenerator:
             self.instructions.append(('LOAD_CONST', 0))
         
         # 2. Store it in variable 'x'
-        self.instructions.append(('STORE_VAR', node.isim))
+        self.instructions.append(('DEF_VAR', node.isim))
 
     def visit_Atama(self, node):
         # Format: x = 10;
@@ -139,35 +139,35 @@ class BytecodeGenerator:
 
 
     def visit_FonksiyonBildir(self, node):
-        # 1. Register the function name BEFORE skipping the body.
-        # We don't know the body address yet, so we use a placeholder (0) for now.
+        # 1. Register Function Name
         addr_const_idx = len(self.instructions)
         self.instructions.append(('LOAD_CONST', 0)) 
-        self.instructions.append(('STORE_VAR', node.isim)) # Now this runs immediately!
+        self.instructions.append(('DEF_VAR', node.isim)) 
 
-        # 2. Skip the body (so it doesn't run automatically)
+        # 2. Skip Body
         jump_over_idx = len(self.instructions)
         self.instructions.append(('JUMP_ABSOLUTE', None))
 
-        # 3. Mark the start of the function body
+        # 3. Function Start
         func_start_address = len(self.instructions)
-
-        # 4. BACKPATCH: Now we know the address, update step 1
         self.instructions[addr_const_idx] = ('LOAD_CONST', func_start_address)
 
-        # 5. Handle Parameters (These store values passed by the caller)
-        # We pop them in reverse order because Stack is LIFO
+        # 4. Parameters (DEF_VAR in the frame created by CALL)
         for _, param_name in reversed(node.parametreler):
-            self.instructions.append(('STORE_VAR', param_name))
+            self.instructions.append(('DEF_VAR', param_name))
 
-        # 6. Generate Body Code
-        self.visit(node.govde)
+        # 5. Body Code (CRITICAL FIX HERE)
+        # Don't use self.visit(node.govde) because it triggers ENTER_SCOPE.
+        # Instead, iterate statements manually so we stay in the CALL frame.
+        if node.govde:
+             for stmt in node.govde.statements:
+                 self.visit(stmt)
 
-        # 7. Safety Return (in case user forgot)
+        # 6. Safety Return
         self.instructions.append(('LOAD_CONST', None))
         self.instructions.append(('RETURN', None))
 
-        # 8. Fix the Jump Over target
+        # 7. Patch Jump
         after_func_idx = len(self.instructions)
         self.instructions[jump_over_idx] = ('JUMP_ABSOLUTE', after_func_idx)
 
