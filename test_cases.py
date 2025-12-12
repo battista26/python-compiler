@@ -27,8 +27,13 @@ def run_test(name, code, test_type="valid", expected_vars=None):
     try:
         ast = parser.parse(code)
     except Exception as e:
-        print(f"[FAIL] Parser Crashed: {e}")
-        return
+        if test_type == "syntax_error":
+            print(f"[OK] Syntax Error caught as expected: {e}")
+            print("="*50 + "\n")
+            return
+        else:
+            print(f"[FAIL] Parser Crashed: {e}")
+            return
 
     if test_type == "syntax_error":
         if ast is None:
@@ -85,7 +90,7 @@ def run_test(name, code, test_type="valid", expected_vars=None):
     if expected_vars:
         all_match = True
         for var_name, expected_val in expected_vars.items():
-            actual_val = vm.variables.get(var_name)
+            actual_val = vm.frames[0].get(var_name)
             if actual_val != expected_val:
                 print(f"[FAIL] Variable '{var_name}' mismatch! Expected {expected_val}, got {actual_val}")
                 all_match = False

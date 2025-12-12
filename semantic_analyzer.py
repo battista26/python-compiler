@@ -56,11 +56,11 @@ class SemanticAnalyzer:
         if node.deger:
             expr_type = self.visit(node.deger)
             if expr_type != node.tip and expr_type != 'error':
-                print(f"HATA: {node.isim} degiskeni '{node.tip}' turunde ama '{expr_type}' atandi.")
+                raise Exception(f"HATA: {node.isim} degiskeni '{node.tip}' turunde ama '{expr_type}' atandi.")
         
         # 2. Add to symbol table with the DECLARED type (no more 'unknown')
         if self.symtab.check_current_scope(node.isim):
-            print(f"HATA: '{node.isim}' zaten tanimli!")
+            raise Exception(f"HATA: '{node.isim}' zaten tanimli!")
         else:
             self.symtab.add_symbol(node.isim, {'type': node.tip, 'category': 'var'})
         
@@ -213,7 +213,7 @@ class SemanticAnalyzer:
             symbol['type'] = val_type
             # print(f"Bilgi: {node.isim} degiskeninin tipi '{val_type}' olarak guncellendi.")
         elif var_type != val_type and val_type != 'error':
-            print(f"HATA: Tip uyusmazligi! '{node.isim}' ({var_type}) degiskenine '{val_type}' atanmaya calisildi.")
+            raise Exception(f"HATA: Tip uyusmazligi! '{node.isim}' ({var_type}) degiskenine '{val_type}' atanmaya calisildi.")
         
         return symbol['type']
 

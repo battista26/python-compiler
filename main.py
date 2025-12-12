@@ -22,7 +22,13 @@ int x = 5;           # Redeclaration
 """
 
 code3 = """
-int x = 5 + 3;
+int x = 10;
+if (x > 5) {
+    x = 20;
+} else {
+    x = 0;
+}
+
 """
 
 if __name__ == "__main__":
