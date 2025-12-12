@@ -69,45 +69,179 @@ while (num > 0) {
 }
 
 for (i = 0; i < 10; i = i + 1) {
-    # Loop body
+    # Döngü gövdesi
 }
 ```
-# 4.yerde kaldım (Deepseek)
+Yorumlar: `#` ile başlayan satırlarla yorum yazılabilir  
+
+## İmplementasyon Detayları  
+Code generation'dan önce Semantic Analysis için Visitor Pattern (`semantic_analyzer.py`) kullanılıyor.
+- Symbol Table: (`symbol_table.py`) Scope'u stack olarak belirtir (Global -> Fonksiyon -> Blok)
+- Scope Resolution: `{ ... }` şeklindeki bloklardan çıkıldığında değişkenler sembol tablosundan kaldırılır.
+- Type Checking:
+  - Değişkenler atanan değerlere uyuşmalı
+  - Binary operasyonları (ör: `+`, `>`) uyumlu tipler arasında olmalı  
+  - Fonksiyon argümanları belirtilen tipe şekle uymalı
+  - Fonksiyon return değeri belirtilen tipte return tipi döndürür
+
+## Kullanılan Mimari: Stack-Based Bytecode
+
+MIPS/x86 spesifik hardware register'ları kullandığı için platform-independent Bytecode daha kolay.  
+
+Ayrıca compiler Python'da yazıldığından VM ile test etmek daha basit.
+
+## Bazı Eksiklerler
+Array, Struct gibi eklenmedi.  
+Input gibi diğer dillerde kütüphanede olan fonksiyonlar yok.
+
+## Örnek Output
+```
+int x = 5 + 3;
+```
+Oluşan Bytecode (`program.bytecode`)
+```
+LOAD_CONST,5
+LOAD_CONST,3
+ADD
+STORE_VAR,x
+HALT
+```
+Virtual Machine Outputu
+```
+--- VM Calisiyor ---
+ > x = 8
+Program sonlandi.
+--- VM Bitti ---
+Final Memory State: {'x': 8}
+```
+
+Bütün Compiler Output (Tüm programın nasıl çalıştığını görmek için)  
+```
+python main.py
+==========================================
+
+--- Compiler Design Project ---
+
+--- Source Code ---
+int x = 5 + 3;
 
 
-Yorumlar: Satır `#` ile başlarsa yorum yazılabilir
+--- Lexical Analysis ---
+Tipi: TIP_INT         Degeri: int
+Tipi: TANIMLAYICI     Degeri: x
+Tipi: ATAMA           Degeri: =
+Tipi: TAMSAYI         Degeri: 5
+Tipi: TOPLA           Degeri: +
+Tipi: TAMSAYI         Degeri: 3
+Tipi: NOKTALI_VIRGUL  Degeri: ;
+------------------------------------
+
+
+--- Syntax Analysis (Parsing) ---
+AST Tree Olusturuldu:
+Program
+  statements: [
+    DegiskenBildir
+      isim: x
+      tip: int
+      deger:
+        BinaryOp
+          sol:
+            Literal
+              deger: 5
+              tip: int
+          op: +
+          sag:
+            Literal
+              deger: 3
+              tip: int
+  ]
+
+--- Semantic Analysis ---
+Analiz Basliyor...
+--- Global Scope (Derinlik: 0) ---
+  x: {'type': 'int', 'category': 'var'}
+------------------------------
+Analiz Bitti.
+----------------------------
+
+
+--- Bytecode Generation ---
+0  : LOAD_CONST      5
+1  : LOAD_CONST      3
+2  : ADD
+3  : STORE_VAR       x
+4  : HALT
+------------------------------
+
+
+[INFO] Bytecode'program.bytecode' dosyasina kaydedildi.
+
+--- Virtual Machine Execution ---
+--- VM Calisiyor ---
+ > x = 8
+Program sonlandi.
+--- VM Bitti ---
+Final Memory State: {'x': 8}
+==========================================
+```
 
 ## Gramer (EBNF)
 ```
-program        ::= statement_list?
-statement_list ::= statement | statement_list statement
-statement      ::= var_decl | func_decl | assignment_stmt | if_stmt | while_stmt | for_stmt | return_stmt | expr_stmt | block
+/* High Level Structure */
+program          ::= statement_list?
+statement_list   ::= statement | statement_list statement
+statement        ::= var_decl 
+                   | func_decl 
+                   | assignment_stmt 
+                   | if_stmt 
+                   | while_stmt 
+                   | for_stmt 
+                   | return_stmt 
+                   | expr_stmt 
+                   | blok
 
-block          ::= "{" statement_list "}" | "{" "}"
+blok             ::= "{" statement_list "}" | "{" "}"
 
-var_decl       ::= "let" IDENTIFIER ("=" expression)? ";"
-func_decl      ::= "def" IDENTIFIER "(" param_list? ")" block
-param_list     ::= IDENTIFIER ("," IDENTIFIER)*
+/* Data Types */
+tip              ::= "int" | "float" | "bool" | "string" | "void"
 
-if_stmt        ::= "if" "(" expression ")" block ("else" block)?
-while_stmt     ::= "while" "(" expression ")" block
-for_stmt       ::= "for" "(" for_init expression ";" assignment ")" block
-for_init       ::= var_decl | assignment_stmt
+/* Declarations */
+var_decl         ::= tip TANIMLAYICI ("=" expression)? ";"
+func_decl        ::= tip TANIMLAYICI "(" param_list? ")" blok
+param_list       ::= param ("," param)*
+param            ::= tip TANIMLAYICI
 
-assignment_stmt::= assignment ";"
-assignment     ::= IDENTIFIER "=" expression
-return_stmt    ::= "return" expression ";"
-expr_stmt      ::= expression ";"
+/* Control Flow */
+if_stmt          ::= "if" "(" expression ")" blok ("else" blok)?
+while_stmt       ::= "while" "(" expression ")" blok
+for_stmt         ::= "for" "(" for_init expression ";" assignment ")" blok
+for_init         ::= var_decl | assignment_stmt
 
-expression     ::= expression BINOP expression
-                 | UNARYOP expression
-                 | "(" expression ")"
-                 | IDENTIFIER "(" arg_list? ")"
-                 | LITERAL
-                 | IDENTIFIER
+/* Statements */
+assignment_stmt  ::= assignment ";"
+assignment       ::= TANIMLAYICI "=" expression
+return_stmt      ::= "return" expression ";"
+expr_stmt        ::= expression ";"
 
-BINOP          ::= "+" | "-" | "*" | "/" | "%" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
-UNARYOP        ::= "-" | "!"
+/* Expressions */
+expression       ::= expression BINOP expression
+                   | UNARYOP expression
+                   | "(" expression ")"
+                   | func_call
+                   | LITERAL
+                   | TANIMLAYICI
+
+func_call        ::= TANIMLAYICI "(" arg_list? ")"
+arg_list         ::= expression ("," expression)*
+
+/* Terminals / Tokens */
+BINOP            ::= "+" | "-" | "*" | "/" | "%" 
+                   | "==" | "!=" | "<" | ">" | "<=" | ">=" 
+                   | "&&" | "||"
+UNARYOP          ::= "-" | "!"
+LITERAL          ::= TAMSAYI | ONDALIKLI | "true" | "false" | STRING
+TANIMLAYICI      ::= [a-zA-Z_][a-zA-Z0-9_]*
 ```
 ## AST Node Yapısı
 `ast_structure.py` dosyasında sınıflandırılmalar bulunmakta.

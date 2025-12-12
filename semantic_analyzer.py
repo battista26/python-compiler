@@ -154,8 +154,7 @@ class SemanticAnalyzer:
     def visit_Tanimlayici(self, node):
         symbol = self.symtab.lookup(node.isim)
         if symbol is None:
-            print(f"HATA: '{node.isim}' tanimli degil!")
-            return 'error'
+            raise Exception(f"HATA: '{node.isim}' tanimli degil!") 
         return symbol['type']
 
     def visit_Literal(self, node):
@@ -205,8 +204,7 @@ class SemanticAnalyzer:
         symbol = self.symtab.lookup(node.isim)
         
         if symbol is None:
-            print(f"HATA: '{node.isim}' tanimli degil! Atama yapilamaz.")
-            return 'error'
+            raise Exception(f"HATA: '{node.isim}' tanimli degil!")
         
         var_type = symbol['type']
 

@@ -22,13 +22,7 @@ int x = 5;           # Redeclaration
 """
 
 code3 = """
-bool neacaba = true;
-
-if (neacaba) {
-    neacaba = false;
-} else {
-    neacaba = true;
-}
+int x = 5 + 3;
 """
 
 if __name__ == "__main__":

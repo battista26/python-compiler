@@ -60,6 +60,10 @@ class VirtualMachine:
                 elif arg == '>': self.stack.append(a > b) # num > 0
                 elif arg == '<=': self.stack.append(a <= b)
                 elif arg == '>=': self.stack.append(a >= b)
+                elif arg == '&&': self.stack.append(a and b)
+                elif arg == '||': self.stack.append(a or b)
+                else:
+                    raise Exception(f"Runtime Error: Bilinmeyen karsilastirma operatoru '{arg}'.")
 
             elif opcode == 'JUMP_IF_FALSE':
                 # FIX 3: MUST POP the condition. 

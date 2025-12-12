@@ -220,9 +220,9 @@ def p_empty(p):
 
 def p_error(p):
     if p:
-        print(f"Syntax hatasi, token {p.type}, deger '{p.value}', satir {p.lineno}")
+        raise Exception(f"Syntax hatasi, token {p.type}, deger '{p.value}', satir {p.lineno}")
     else:
-        print("Syntax hatasi, dosya sonu EOF")
+        raise Exception("Syntax hatasi, dosya sonu EOF")
 
 # Build parser
 parser = yacc.yacc()
