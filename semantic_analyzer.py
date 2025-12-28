@@ -10,71 +10,71 @@ class SemanticAnalyzer:
                 self.visit(item)
             return
         
+        # Dinamik method cagirma, isme gore ziyaret eder
         method_name = f'visit_{node.__class__.__name__}'
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
+    # Genel ziyaret metodu, visit methodu bulunamazsa alt dugumleri ziyaret eder
     def generic_visit(self, node):
         for key, value in vars(node).items():
             if hasattr(value, '__dict__') or isinstance(value, list):
                 self.visit(value)
 
-    # --- Visit Methods ---
+    # Visit methodlari
 
     def visit_Program(self, node):
         print("Analiz Basliyor...")
         self.visit(node.statements)
-        # Print final Global Scope state
+        # Global scope'u yazdir
         self.symtab.print_current_scope("Global Scope") 
         print("Analiz Bitti.")
 
     def visit_Blok(self, node):
         self.symtab.enter_scope()
         self.visit(node.statements)
-        # Print block scope before destroying it
+        # Blok scope'u yazdir
         self.symtab.print_current_scope("Blok Scope") 
         self.symtab.exit_scope()
 
     def visit_DegiskenBildir(self, node):
         '''
         Eski logic
-
-        # 1. Determine the type of the initial value
+    
         val_type = 'unknown'
         if node.deger:
             val_type = self.visit(node.deger)
         
-        # 2. Check if variable already exists in CURRENT scope
         if self.symtab.check_current_scope(node.isim):
             print(f"HATA: '{node.isim}' zaten tanimli!")
         else:
-            # 3. Add to symbol table with the detected type
+            # Scope'ta yoksa ekle
             self.symtab.add_symbol(node.isim, {'type': val_type, 'category': 'var'})        
         '''
         expr_type = 'unknown'
-        # 1. Check if variable already exists in CURRENT scope
+        # Degiskenin mevcut scope icinde zaten tanimli olup olmadigini kontrol et
         if node.deger:
             expr_type = self.visit(node.deger)
             if expr_type != node.tip and expr_type != 'error':
                 raise Exception(f"HATA: {node.isim} degiskeni '{node.tip}' turunde ama '{expr_type}' atandi.")
         
-        # 2. Add to symbol table with the DECLARED type (no more 'unknown')
+        # Sembol tablosuna bildirilen degiskeni ekle (artik unknown degil, belirli tipte)
         if self.symtab.check_current_scope(node.isim):
             raise Exception(f"HATA: '{node.isim}' zaten tanimli!")
         else:
             self.symtab.add_symbol(node.isim, {'type': node.tip, 'category': 'var'})
         
     def visit_FonksiyonBildir(self, node):
-        # 1. Extract parameter types to save in symbol table
-        # node.parametreler is a list of tuples like [('int', 'x'), ('float', 'y')]
+        # Sembol tablosuna kaydetmek icin parametre tiplerini cikar
+        # node.parametreler tuple listesi, mesela [('int', 'x'), ('float', 'y')]
         param_types = [p[0] for p in node.parametreler]
         
-        # 2. Register function with its SIGNATURE (param types)
+        # Fonksiyonu parametre tipleri ile birlikte kaydet
         if self.symtab.check_current_scope(node.isim):
             print(f"HATA: '{node.isim}' fonksiyonu zaten tanimli!")
         else:
-            # We save 'params': param_types so we can check them in a Call
-            # We assume return type is 'void' or 'any' if not specified in your AST yet
+            # 'params': param_types seklinde kaydediyoruz, cagrida kontrol edebiliriz
+            #  AST'de henuz belirtilmediyse donus tipinin 'void' veya 'any' oldugunu varsayiyoruz
             self.symtab.add_symbol(node.isim, {
                 'type': 'function', 
                 'category': 'func',
@@ -82,10 +82,10 @@ class SemanticAnalyzer:
                 'return_type': node.return_type # node.return_type'a cevirdik
             })
 
-        # 3. Enter INNER scope
+        # Inner scope'a giris
         self.symtab.enter_scope()
         
-        # Register parameters as variables inside the function
+        # Parametreleri fonksiyon icinde degiskenler olarak kaydet
         for param_type, param_name in node.parametreler:
             self.symtab.add_symbol(param_name, {'type': param_type, 'category': 'param'})
         
@@ -96,7 +96,7 @@ class SemanticAnalyzer:
 
     
     def visit_FonksiyonCall(self, node):
-        # 1. Check if function is defined
+        # Fonksiyonun tanimli olup olmadigini kontrol et
         func_symbol = self.symtab.lookup(node.isim)
         if func_symbol is None:
             print(f"HATA: '{node.isim}' adinda bir fonksiyon bulunamadi!")
@@ -106,22 +106,22 @@ class SemanticAnalyzer:
             print(f"HATA: '{node.isim}' bir fonksiyon degil!")
             return 'error'
 
-        # 2. Check Argument Count
+        # Arguman sayisini kontrol et
         expected_params = func_symbol['params']
-        given_args = node.args # This is a list of expression nodes
+        given_args = node.args # Node listesi
         
         if len(given_args) != len(expected_params):
             print(f"HATA: '{node.isim}' fonksiyonu {len(expected_params)} parametre bekliyor, {len(given_args)} verildi.")
             return 'error'
 
-        # 3. Check Argument Types
+        # Arguman tipi kontrolu
         for i, (arg_expr, expected_type) in enumerate(zip(given_args, expected_params)):
             arg_type = self.visit(arg_expr)
             
             if arg_type != expected_type and arg_type != 'error':
                 print(f"HATA: '{node.isim}' fonksiyonunun {i+1}. parametresi '{expected_type}' olmali, '{arg_type}' verildi.")
 
-        # Return the function's return type (e.g. 'void', 'int')
+        # Fonksiyonun return tipi (e.g. 'void', 'int')
         return func_symbol.get('return_type', 'void')
     
     def visit_IfStatement(self, node):
@@ -161,17 +161,16 @@ class SemanticAnalyzer:
         return node.tip
 
     def visit_BinaryOp(self, node):
-        # Visit children to get their types
+        # Tipleri almak icin children node'lari ziyaret et
         left_type = self.visit(node.sol)
         right_type = self.visit(node.sag)
 
-        # Propagate errors
         if left_type == 'error' or right_type == 'error':
             return 'error'
 
         op = node.op
 
-        # Arithmetic Operations
+        # Arithmetic
         if op in ['+', '-', '*', '/', '%']:
             if left_type in ['int', 'float'] and right_type in ['int', 'float']:
                 if left_type == 'float' or right_type == 'float':
@@ -181,7 +180,7 @@ class SemanticAnalyzer:
                 print(f"HATA: Tip uyusmazligi! {left_type} {op} {right_type}. (Sayisal tur bekleniyor)")
                 return 'error'
         
-        # Comparison Operations
+        # Karsilastirma
         elif op in ['<', '>', '<=', '>=', '==', '!=']:
             if left_type == right_type or (left_type in ['int', 'float'] and right_type in ['int', 'float']):
                 return 'bool'
@@ -189,7 +188,7 @@ class SemanticAnalyzer:
                 print(f"HATA: Karsilastirma icin tipler uyumlu olmali: {left_type} vs {right_type}")
                 return 'error'
         
-        # Logical Operations
+        # Logic islemleri
         elif op in ['&&', '||']:
             if left_type == 'bool' and right_type == 'bool':
                 return 'bool'
@@ -208,7 +207,7 @@ class SemanticAnalyzer:
         
         var_type = symbol['type']
 
-        # Type Inference: If variable was unknown/any (like params), we might allow updating it
+        # Type Inference, variable unknown/any ise, guncellemeye izin var
         if var_type == 'unknown' or var_type == 'any':
             symbol['type'] = val_type
             # print(f"Bilgi: {node.isim} degiskeninin tipi '{val_type}' olarak guncellendi.")
@@ -234,4 +233,56 @@ class SemanticAnalyzer:
         
         return expr_type
     
-# You can add visit_Atama, visit_BinaryOp, etc. here...
+if __name__ == "__main__":
+    from lexer import lexer
+    from parser import parser
+
+    print("SEMANTIC ANALYSIS\n")
+
+    # Düzgün Kod ve Sembol Tablosu
+    print("TEST 1: Duzgun Kod ve Scope Yonetimi")
+    code_valid = """
+    string hatali = 34;
+    """
+    print("Verilen Kod:")
+    print(code_valid.strip())
+    print("-" * 60)
+    
+    try:
+        # Parse -> AST
+        lexer.input(code_valid)
+        ast = parser.parse(code_valid)
+        
+        # Analyze -> Symbol Table
+        analyzer = SemanticAnalyzer()
+        analyzer.visit(ast)
+        print("\n[SUCCESS] Test 1 Passed: Symbol Table duzgun olusturuldu.")
+        
+    except Exception as e:
+        print(f"[FAILED] Test 1: {e}")
+
+    print("\n" + "="*60 + "\n")
+
+    # Tip Hatasi Yakalama ---
+    print("TEST 2: Tip Uyusmazligi Hatalarini Yakalama")
+    code_error = """
+    int sayi = 50;
+    sayi = true;  # Tip uyusmazligi hatasi
+    """
+    print("Verilen Kod:")
+    print(code_error.strip())
+    print("-" * 60)
+    
+    try:
+        # Parse -> AST
+        lexer.input(code_error)
+        ast = parser.parse(code_error)
+        
+        # Analyze (Should raise an exception)
+        analyzer = SemanticAnalyzer()
+        analyzer.visit(ast)
+        
+    except Exception as e:
+        # If we catch the error, the test is successful
+        print("[SUCCESS] Test 2 Passed (Hata Basariyla Yakalandı):")
+        print(f"   -> {e}")

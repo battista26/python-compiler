@@ -1,8 +1,8 @@
 class VirtualMachine:
     def __init__(self):
         self.stack = []      
-        # self.variables is replaced by self.frames
-        # frames[0] is Global Scope. frames[-1] is Current Function Scope.
+        # self.variables yerine self.frames kullaniliyor
+        # frames[0] Global Kapsamdir (Scope). frames[-1] Mevcut Fonksiyon Kapsamidir.
         self.frames = [{}] 
         self.return_stack = [] 
 
@@ -13,7 +13,7 @@ class VirtualMachine:
         while pc < len(instructions):
             opcode, arg = instructions[pc]
             
-            # Uncomment for debugging recursion
+            # Ozyinelemeyi (recursion) hata ayiklamak (debug) icin yorumu kaldirin
             # print(f"PC:{pc} | Op:{opcode} | Stack:{self.stack} | TopFrame:{self.frames[-1]}")
 
             if opcode == 'LOAD_CONST':
@@ -21,7 +21,7 @@ class VirtualMachine:
             
             elif opcode == 'LOAD_VAR':
                 found = False
-                # Search from Top (Local) down to Bottom (Global)
+                # En Ustten (Yerel) en Alta (Global) dogru ara
                 for frame in reversed(self.frames):
                     if arg in frame:
                         self.stack.append(frame[arg])
@@ -35,7 +35,7 @@ class VirtualMachine:
                 val = self.stack.pop()
                 found = False
                 
-                # 1. Look for existing variable to UPDATE
+                # Guncellemek icin mevcut degiskeni ara
                 for frame in reversed(self.frames):
                     if arg in frame:
                         frame[arg] = val
@@ -43,12 +43,12 @@ class VirtualMachine:
                         # print(f" > Updated {arg} = {val}") # Debug
                         break
                 
-                # 2. If not found, create it in the CURRENT scope (or raise error)
-                # In strict compilers, this should be an error (must use DEF_VAR), 
-                # but for this homework, we can default to creating it in the top frame.
+                # Bulunamazsa, MEVCUT kapsamda olustur (veya hata firlat)
+                # Kati derleyicilerde bu bir hata olmali (DEF_VAR kullanilmali), 
+                # ancak bu odev icin ust cercevede olusturmayi varsayilan olarak kabul edebiliriz.
                 if not found:
-                     self.frames[-1][arg] = val
-                     # print(f" > Created {arg} = {val}") # Debug
+                      self.frames[-1][arg] = val
+                      # print(f" > Created {arg} = {val}") # Debug
 
             elif opcode == 'ADD':
                 b = self.stack.pop(); a = self.stack.pop()
@@ -88,7 +88,7 @@ class VirtualMachine:
                 target_addr = self.stack.pop()
                 self.return_stack.append(pc)
                 
-                # NEW: Push a new empty frame for the function's local vars
+                # Fonksiyonun yerel degiskenleri icin yeni bos bir cerceve (frame) ekle
                 self.frames.append({}) 
                 
                 pc = target_addr
@@ -96,37 +96,36 @@ class VirtualMachine:
 
             elif opcode == 'RETURN':
                 if not self.return_stack:
-                    break # Finished main program
+                    break # Ana program bitti
                 
                 return_addr = self.return_stack.pop()
                 
-                # --- FIX: Destroy the function's local scope ---
+                # Fonksiyonun yerel kapsamini yok et
                 self.frames.pop()
-                # -----------------------------------------------
 
                 pc = return_addr
 
             elif opcode == 'ENTER_SCOPE':
-                self.frames.append({}) # Push new empty scope
+                self.frames.append({}) # Yeni bos kapsam ekle
 
             elif opcode == 'EXIT_SCOPE':
-                self.frames.pop()      # Destroy current scope
+                self.frames.pop()      # Mevcut kapsami yok et
 
             elif opcode == 'DEF_VAR':
-                # ALWAYS create in the current (top) frame.
-                # Do not check parent frames. This shadows or initializes.
+                # HER ZAMAN mevcut (ust) cercevede olustur.
+                # Ust cerceveleri kontrol etme. Bu golgeleme (shadowing) yapar veya baslatir.
                 if not self.stack: raise Exception("Stack Underflow")
                 val = self.stack.pop()
                 self.frames[-1][arg] = val
                 print(f" > Defined {arg} = {val}")
 
             elif opcode == 'STORE_VAR':
-                # STRICT UPDATE: Only update if it already exists in the chain.
+                # Sadece zincirde zaten varsa guncelle.
                 if not self.stack: raise Exception("Stack Underflow")
                 val = self.stack.pop()
                 found = False
                 
-                # Search from Top (Local) to Bottom (Global)
+                # En Ustten (Yerel) en Alta (Global) dogru ara
                 for frame in reversed(self.frames):
                     if arg in frame:
                         frame[arg] = val
@@ -155,5 +154,5 @@ class VirtualMachine:
             pc += 1 
 
         print("--- VM Bitti ---")
-        # Print globals only
+        # Sadece global hafizayi yazdir
         print("Final Global Memory:", self.frames[0])

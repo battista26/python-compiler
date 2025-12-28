@@ -1,6 +1,6 @@
 class SymbolTable:
     def __init__(self):
-        self.scopes = [{}]  # Baslangicta global scopes
+        self.scopes = [{}]
     
     def enter_scope(self):
         self.scopes.append({})
@@ -22,7 +22,7 @@ class SymbolTable:
 
     # Debuglamak icin scope'u yazdirma
     def print_current_scope(self, scope_name="Scope"):
-        """Prints the contents of the active (topmost) scope."""
+        """En ustteki (topmost) scope'u yazdirir."""
         depth = len(self.scopes) - 1
         indent = "    " * depth
         print(f"{indent}--- {scope_name} (Derinlik: {depth}) ---")

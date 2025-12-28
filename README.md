@@ -29,7 +29,7 @@ Başka bir yöntem ise test case'leri çalıştırmak
 ```
 python test_cases.py
 ```
-## Programlama Dilinin Syntax'i
+## Programlama Dilinin Syntax, Gramer ve Abstract Syntax Tree
 Veri tipleri:  
   - `int` Integer sayılar (ör: `5`, `-10`)  
   - `float` Float sayılar (ör: `3.14`)
@@ -43,8 +43,8 @@ Artık değer bildiriminde veri tipi yazılması gerekiyor. `let` ile yazmayı k
 ```
 int x = 11;
 float armistice = 11.11;
-string msg = "Nipah";
-bool isActive = true;
+string msg = "Outer Wilds";
+bool metalGear = true;
 ```
 
 Fonksiyonlar:  
@@ -73,6 +73,100 @@ for (i = 0; i < 10; i = i + 1) {
 }
 ```
 Yorumlar: `#` ile başlayan satırlarla yorum yazılabilir  
+
+## Gramer (EBNF)
+```
+/* High Level Structure */
+program          ::= statement_list?
+statement_list   ::= statement | statement_list statement
+statement        ::= var_decl 
+                   | func_decl 
+                   | assignment_stmt 
+                   | if_stmt 
+                   | while_stmt 
+                   | for_stmt 
+                   | return_stmt 
+                   | expr_stmt 
+                   | blok
+
+blok             ::= "{" statement_list "}" | "{" "}"
+
+/* Data Types */
+tip              ::= "int" | "float" | "bool" | "string" | "void"
+
+/* Declarations */
+var_decl         ::= tip TANIMLAYICI ("=" expression)? ";"
+func_decl        ::= tip TANIMLAYICI "(" param_list? ")" blok
+param_list       ::= param ("," param)*
+param            ::= tip TANIMLAYICI
+
+/* Control Flow */
+if_stmt          ::= "if" "(" expression ")" blok ("else" blok)?
+while_stmt       ::= "while" "(" expression ")" blok
+for_stmt         ::= "for" "(" for_init expression ";" assignment ")" blok
+for_init         ::= var_decl | assignment_stmt
+
+/* Statements */
+assignment_stmt  ::= assignment ";"
+assignment       ::= TANIMLAYICI "=" expression
+return_stmt      ::= "return" expression ";"
+expr_stmt        ::= expression ";"
+
+/* Expressions */
+expression       ::= expression BINOP expression
+                   | UNARYOP expression
+                   | "(" expression ")"
+                   | func_call
+                   | LITERAL
+                   | TANIMLAYICI
+
+func_call        ::= TANIMLAYICI "(" arg_list? ")"
+arg_list         ::= expression ("," expression)*
+
+/* Terminals / Tokens */
+BINOP            ::= "+" | "-" | "*" | "/" | "%" 
+                   | "==" | "!=" | "<" | ">" | "<=" | ">=" 
+                   | "&&" | "||"
+UNARYOP          ::= "-" | "!"
+LITERAL          ::= TAMSAYI | ONDALIKLI | "true" | "false" | STRING
+TANIMLAYICI      ::= [a-zA-Z_][a-zA-Z0-9_]*
+```
+## AST Node Yapısı
+`ast_structure.py` dosyasında sınıflandırılmalar bulunmakta.
+
+- Program: Root node, statement'ların listesini içerir.
+
+- Blok: `{}` gibi bloklari temsil eder.
+
+- Declarationlar:
+
+  - `DegiskenBildir`: Değişken adı ve verilen değer (None da olarabilir).
+
+  - `FonksiyonBildir`: Fonksiyon adı, parametre listesi ve gövde bloğu bulundurur.
+
+- Statementlar:
+
+  - `IfStatement`: Condition, doğru bloğu ve opsiyonel else bloğu.
+
+  - `WhileStatement`: Condition ve gövde bloğu.
+
+  - `ForStatement`: Initialization, condition, update ve gövde.
+
+  - `ReturnStatement`: Dönüş değeri döndürür.
+
+  - `Atama`: Değişken ismi ve yeni değer.
+
+- Expressionlar:
+
+  - `BinaryOp`: Sol, operatör, sağ node'u.
+
+  - `UnaryOp`: Operatör ve expression node'u.
+
+  - `FonksiyonCall`: Fonksiyon adı ve argüman listesi.
+
+  - `Literal`: Değer ve tür (int, float, bool).
+
+  - `Tanimlayici`: Değişken adı araması.
 
 ## İmplementasyon Detayları  
 Code generation'dan önce Semantic Analysis için Visitor Pattern (`semantic_analyzer.py`) kullanılıyor.
@@ -134,28 +228,272 @@ MIPS/x86 spesifik hardware register'ları kullandığı için platform-independe
 Ayrıca compiler Python'da yazıldığından VM ile test etmek daha basit.
 
 ## Bazı Eksiklerler
-Array, Struct gibi eklenmedi.  
-Input gibi diğer dillerde kütüphanede olan fonksiyonlar yok.
+Array, Struct, Pointer gibi veri yapıları eklenmedi. 
+Optimizasyonlar implemente edilmedi.   
+Input, print gibi fonksiyonlar diğer dillerin kütüphanelerinde olan fonksiyonlar yok.
 
-## Örnek Output
+## Örnek Outputlar
+
+
+### Lexical Analysis
+
 ```
-int x = 5 + 3;
+int x = 5 * 3 + 5;
 ```
-Oluşan Bytecode (`program.bytecode`)
+
 ```
-LOAD_CONST,5
-LOAD_CONST,3
-ADD
-STORE_VAR,x
-HALT
+float x = 5.0 * 3.0 + 5.0;
 ```
-Virtual Machine Outputu
+
+```
+$$$$
+```
+```
+Verilen input: 'int x = 5 * 3 + 5;'
+
+TOKEN TYPE                VALUE           LINE  POS
+-------------------------------------------------------
+TIP_INT                   int             1     0
+TANIMLAYICI               x               1     4
+ATAMA                     =               1     6
+TAMSAYI                   5               1     8
+CARP                      *               1     10
+TAMSAYI                   3               1     12
+TOPLA                     +               1     14
+TAMSAYI                   5               1     16
+NOKTALI_VIRGUL            ;               1     17
+```
+
+```
+Verilen input: 'float x = 5.0 * 3.0 + 5.0;'
+
+TOKEN TYPE                VALUE           LINE  POS    
+-------------------------------------------------------
+TIP_FLOAT                 float           1     0      
+TANIMLAYICI               x               1     6
+ATAMA                     =               1     8
+ONDALIKLI                 5.0             1     10
+CARP                      *               1     14
+ONDALIKLI                 3.0             1     16
+TOPLA                     +               1     20
+ONDALIKLI                 5.0             1     22
+NOKTALI_VIRGUL            ;               1     25
+```
+
+```
+Verilen input: '$$$$'
+
+TOKEN TYPE                VALUE           LINE  POS
+-------------------------------------------------------
+Geçersiz karakter '$'
+Geçersiz karakter '$'
+Geçersiz karakter '$'
+Geçersiz karakter '$'
+```
+
+Göründüğü gibi integer ve float arasındaki TIP_INT, TIP_FLOAT ve TAMSAYI, ONDALIKLI farkını görebiliyoruz.  
+
+Ayrıca dolar işaretini ($) gramere tanımlamadığımdan, lexer hata veriyor.
+
+### Parsing
+
+```
+int x = 5 * 3 + 5;
+```
+
+```
+float x = 5.0 * 3.0 + 5.0;
+```
+
+```
+string hatali = 34;
+```
+
+```
+PARSER OUTPUT (Abstract Syntax Tree)
+------------------------------------------------------------
+Program
+  statements: [
+    DegiskenBildir
+      isim: x
+      tip: int
+      deger:
+        BinaryOp
+          sol:
+            BinaryOp
+              sol:
+                Literal
+                  deger: 5
+                  tip: int
+              op: *
+              sag:
+                Literal
+                  deger: 3
+                  tip: int
+          op: +
+          sag:
+            Literal
+              deger: 5
+              tip: int
+  ]
+============================================================
+```
+
+```
+PARSER OUTPUT (Abstract Syntax Tree)
+------------------------------------------------------------
+Program
+  statements: [
+    DegiskenBildir
+      isim: x
+      tip: float
+      deger:
+        BinaryOp
+          sol:
+            BinaryOp
+              sol:
+                Literal
+                  deger: 5.0
+                  tip: float
+              op: *
+              sag:
+                Literal
+                  deger: 3.0
+                  tip: float
+          op: +
+          sag:
+            Literal
+              deger: 5.0
+              tip: float
+  ]
+============================================================
+```
+
+```
+============================================================
+PARSER OUTPUT (Abstract Syntax Tree)
+------------------------------------------------------------
+Program
+  statements: [
+    DegiskenBildir
+      isim: hatali
+      tip: string
+      deger:
+        Literal
+          deger: 34
+          tip: int
+  ]
+============================================================
+```
+Göründüğü gibi semantic olarak string'e integer atanamaz ancak syntax olarak yanlış bir şey olmadığından AST'yi görebiliyoruz. 
+
+Buradaki AST biraz daha düzgün gözükmesi için print_ast fonksiyonununu kullandım. Ayrıca, `int x = 5 * 3 + 5;`'in farklı bir biçimde gösterimi
+
+![alt text](ASTNode.png)
+
+### Semantic Analysis (Type Checking & Scoping)
+
+```
+int x = 10;
+  
+void hesapla(int a) {
+  int sonuc = a + x;
+}
+```
+
+```
+int x = 10;
+
+void hesapla(int a) {
+  void topla(int b) {
+    int sonuc = a + b;
+  }
+}
+```
+
+```
+string hatali = 34;
+```
+
+```
+Verilen Kod:
+int x = 10;
+    
+    void hesapla(int a) {
+        int sonuc = a + x;
+    }
+------------------------------------------------------------
+Analiz Basliyor...
+        --- Blok Scope (Derinlik: 2) ---
+          sonuc: {'type': 'int', 'category': 'var'}
+        ------------------------------
+    --- Fonksiyon: hesapla (Derinlik: 1) ---
+      a: {'type': 'int', 'category': 'param'}
+    ------------------------------
+--- Global Scope (Derinlik: 0) ---
+  x: {'type': 'int', 'category': 'var'}
+  hesapla: {'type': 'function', 'category': 'func', 'params': ['int'], 'return_type': 'void'}
+------------------------------
+Analiz Bitti.
+```
+
+```
+Verilen Kod:
+int x = 10;
+
+    void hesapla(int a) {
+        void topla(int b) {
+            int sonuc = a + b;
+        }
+    }
+------------------------------------------------------------
+Analiz Basliyor...
+                --- Blok Scope (Derinlik: 4) ---
+                  sonuc: {'type': 'int', 'category': 'var'}
+                ------------------------------
+            --- Fonksiyon: topla (Derinlik: 3) ---
+              b: {'type': 'int', 'category': 'param'}
+            ------------------------------
+        --- Blok Scope (Derinlik: 2) ---
+          topla: {'type': 'function', 'category': 'func', 'params': ['int'], 'return_type': 'void'}
+        ------------------------------
+    --- Fonksiyon: hesapla (Derinlik: 1) ---
+      a: {'type': 'int', 'category': 'param'}
+    ------------------------------
+--- Global Scope (Derinlik: 0) ---
+  x: {'type': 'int', 'category': 'var'}
+  hesapla: {'type': 'function', 'category': 'func', 'params': ['int'], 'return_type': 'void'}
+------------------------------
+Analiz Bitti.
+```
+
+```
+--- Semantic Analysis ---
+Analiz Basliyor...
+KRITIK SEMANTIC HATASI: HATA: hatali degiskeni 'string' turunde ama 'int' atandi.
+```
+
+Bu bölümde, global'den derinleşerek scope'un farklı derinliklerdeki variable'larını gözlemliyoruz. 
+
+Yanlış değişken atamasında ise hata gözlemliyoruz.
+
+
+### Oluşan Bytecode (`program.bytecode`)
+```
+0  : LOAD_CONST      5
+1  : LOAD_CONST      3
+2  : MUL
+3  : LOAD_CONST      5
+4  : ADD
+5  : DEF_VAR         x
+6  : HALT
+```
+### Virtual Machine
 ```
 --- VM Calisiyor ---
- > x = 8
-Program sonlandi.
+ > Defined x = 20
 --- VM Bitti ---
-Final Memory State: {'x': 8}
+Final Global Memory: {'x': 20}
 ```
 
 Bütün Compiler Output (Tüm programın nasıl çalıştığını görmek için)  
@@ -228,97 +566,3 @@ Program sonlandi.
 Final Memory State: {'x': 8}
 ==========================================
 ```
-
-## Gramer (EBNF)
-```
-/* High Level Structure */
-program          ::= statement_list?
-statement_list   ::= statement | statement_list statement
-statement        ::= var_decl 
-                   | func_decl 
-                   | assignment_stmt 
-                   | if_stmt 
-                   | while_stmt 
-                   | for_stmt 
-                   | return_stmt 
-                   | expr_stmt 
-                   | blok
-
-blok             ::= "{" statement_list "}" | "{" "}"
-
-/* Data Types */
-tip              ::= "int" | "float" | "bool" | "string" | "void"
-
-/* Declarations */
-var_decl         ::= tip TANIMLAYICI ("=" expression)? ";"
-func_decl        ::= tip TANIMLAYICI "(" param_list? ")" blok
-param_list       ::= param ("," param)*
-param            ::= tip TANIMLAYICI
-
-/* Control Flow */
-if_stmt          ::= "if" "(" expression ")" blok ("else" blok)?
-while_stmt       ::= "while" "(" expression ")" blok
-for_stmt         ::= "for" "(" for_init expression ";" assignment ")" blok
-for_init         ::= var_decl | assignment_stmt
-
-/* Statements */
-assignment_stmt  ::= assignment ";"
-assignment       ::= TANIMLAYICI "=" expression
-return_stmt      ::= "return" expression ";"
-expr_stmt        ::= expression ";"
-
-/* Expressions */
-expression       ::= expression BINOP expression
-                   | UNARYOP expression
-                   | "(" expression ")"
-                   | func_call
-                   | LITERAL
-                   | TANIMLAYICI
-
-func_call        ::= TANIMLAYICI "(" arg_list? ")"
-arg_list         ::= expression ("," expression)*
-
-/* Terminals / Tokens */
-BINOP            ::= "+" | "-" | "*" | "/" | "%" 
-                   | "==" | "!=" | "<" | ">" | "<=" | ">=" 
-                   | "&&" | "||"
-UNARYOP          ::= "-" | "!"
-LITERAL          ::= TAMSAYI | ONDALIKLI | "true" | "false" | STRING
-TANIMLAYICI      ::= [a-zA-Z_][a-zA-Z0-9_]*
-```
-## AST Node Yapısı
-`ast_structure.py` dosyasında sınıflandırılmalar bulunmakta.
-
-- Program: Root node, statement'ların listesini içerir.
-
-- Blok: `{}` gibi bloklari temsil eder.
-
-- Declarationlar:
-
-  - DegiskenBildir: Değişken adı ve verilen değer (None da olarabilir).
-
-  - FonksiyonBildir: Fonksiyon adı, parametre listesi ve gövde bloğu bulundurur.
-
-- Statementlar:
-
-  - IfStatement: Condition, doğru bloğu ve opsiyonel else bloğu.
-
-  - WhileStatement: Condition ve gövde bloğu.
-
-  - ForStatement: Initialization, condition, update ve gövde.
-
-  - ReturnStatement: Dönüş değeri döndürür.
-
-  - Atama: Değişken ismi ve yeni değer.
-
-- Expressionlar:
-
-  - BinaryOp: Sol, operatör, sağ node'u.
-
-  - UnaryOp: Operatör ve expression node'u.
-
-  - FonksiyonCall: Fonksiyon adı ve argüman listesi.
-
-  - Literal: Değer ve tür (int, float, bool).
-
-  - Tanimlayici: Değişken adı araması.

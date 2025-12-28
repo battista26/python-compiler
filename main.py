@@ -32,8 +32,18 @@ int sonuc = topla(5, 15); # 5 + 15 + 25 = 45
 
 """
 
+code4 = """
+int x = 10;
+int num = 0;
+
+while (x > 0) {
+    x = x - 1;
+    num = num + 1;
+}
+"""
+
 if __name__ == "__main__":
-    input_code = code3
+    input_code = code4
 
     print("==========================================\n")
     print("--- Compiler Design Project ---\n")
@@ -52,6 +62,10 @@ if __name__ == "__main__":
     print("------------------------------------\n")
 
     print("\n--- Syntax Analysis (Parsing) ---")
+    
+    # Bunu yazmazsam lineno garip degerler veriyor
+    lexer.lineno = 1
+
     ast = parser.parse(input_code)
 
     if ast:
@@ -64,7 +78,7 @@ if __name__ == "__main__":
     try:
         analyzer = SemanticAnalyzer()
         analyzer.visit(ast)
-        # Note: Your SemanticAnalyzer prints errors/scopes internally
+        # Note: SemanticAnalyzer errorlari/scopelari internally tutuyor
     except Exception as e:
         print(f"KRITIK SEMANTIC HATASI: {e}")
         exit()

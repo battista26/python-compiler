@@ -1,6 +1,6 @@
 import ply.lex as lex
 
-# 1. Update Reserved Words to include Types, Remove 'let'
+# Rezerv kelimeler, 'let' kaldirildi
 reserved = {
     'def': 'DEF',
     'if': 'IF',
@@ -17,7 +17,7 @@ reserved = {
     'void': 'TIP_VOID'
 }
 
-# 2. Update Token List
+# Token listesi
 tokens = [
     'TANIMLAYICI',
     'TAMSAYI',
@@ -54,7 +54,7 @@ tokens = [
     'STRING'
 ] + list(reserved.values())
 
-# Regex Rules
+# Regex tanimlamalari
 t_TOPLA = r'\+' 
 t_CIKAR = r'-'
 t_CARP = r'\*'
@@ -97,7 +97,7 @@ def t_TAMSAYI(t):
 
 def t_STRING(t):
     r'\"([^\\\n]|(\\.))*?\"'
-    t.value = t.value[1:-1]  # Remove quotes
+    t.value = t.value[1:-1]  # Tırnak işaretlerini kaldır
     t.type = 'STRING'
     return t
 
@@ -115,3 +115,23 @@ def t_error(t):
     t.lexer.skip(1)
 
 lexer = lex.lex()
+
+# Lexical analysis test code
+if __name__ == "__main__":
+    data = """$$$$"""
+    
+    lexer.input(data)
+    
+    print(f"Verilen input: '{data}'\n")
+    
+    # Output table column'lari
+    print(f"{'TOKEN TYPE':<25} {'VALUE':<15} {'LINE':<5} {'POS':<5}")
+    print("-" * 55)
+
+    # Tokenize
+    while True:
+        tok = lexer.token()
+        if not tok: 
+            break
+        
+        print(f"{tok.type:<25} {str(tok.value):<15} {tok.lineno:<5} {tok.lexpos:<5}")

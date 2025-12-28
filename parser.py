@@ -113,7 +113,7 @@ def p_while_stmt(p):
     '''while_stmt : WHILE SOL_PARANTEZ expression SAG_PARANTEZ blok'''
     p[0] = WhileStatement(condition=p[3], govde=p[5])
 
-# for loop'ta hem for(let i = 0; ...) hem de for(i = 0) şeklinde yazabilmeyi eklemek için ayrı kural ekledim
+# for loop'ta hem for(let i = 0; ...) hem de for(i = 0) şeklinde yazabilmeyi eklemek için ayri kural ekledim
 def p_for_init(p):
     '''for_init : var_decl
                 | assignment_stmt'''
@@ -205,7 +205,7 @@ def p_expression_literal(p):
     elif token_type == 'ONDALIKLI':
         val, type_ = p[1], 'float'
     else:
-        # Default fallback is integer (TAMSAYI)
+        # Default'a integer diyoruz (TAMSAYI)
         val, type_ = p[1], 'int'
     
     p[0] = Literal(deger=val, tip=type_)
@@ -227,23 +227,53 @@ def p_error(p):
 # Build parser
 parser = yacc.yacc()
 
-# Test Helper
+# Test helper
 
 # 3 * 4 + 5 yazdığımızda (3 * 4) + 5 mü 3 * (4 + 5) mi verecek?
 
 test_code = """
-int x = 10;
-int y = 20;
-def topla(int a, int b) {
-    return a + b;
-}
+int x = 3 * 4 + 5;
 """
 
 if __name__ == "__main__":
-    #test_code = input("Test kodunu girin:\n")
+    # Test kodumuz
+    test_code = "string hatali = 34;"
 
-    print("--- Parsing Code ---")
-    print(test_code)
-    print("--- AST Result ---")
-    result = parser.parse(test_code)
-    print_ast(result)
+    print(f"INPUT KOD:\n'{test_code}'\n")
+    print("=" * 60)
+
+    # Lexer
+    print("LEXER OUTPUT (Token Stream)")
+    print("-" * 60)
+    print(f"{'TOKEN TYPE':<20} {'VALUE':<10} {'LINE':<5} {'POS':<5}")
+    
+    lexer.input(test_code)
+    
+    # lexer.py'dakinin aynisi
+    while True:
+        tok = lexer.token()
+        if not tok: 
+            break
+        print(f"{tok.type:<20} {str(tok.value):<10} {tok.lineno:<5} {tok.lexpos:<5}")
+    
+    print("\n" + "=" * 60)
+
+    # Parser
+    print("PARSER OUTPUT (Abstract Syntax Tree)")
+    print("-" * 60)
+    
+    # Lexer islemi yukarida bittigi icin, parser'ın çalışması adına
+    # lexer'ı sıfırlamamız veya parser.parse'a inputu tekrar vermemiz gerekir.
+    # parser.parse() fonksiyonu otomatik olarak lexer.input(test_code) yapar.
+    
+    try:
+        # Parser tokenları alır ve ağacı kurar
+        result = parser.parse(test_code)
+        
+        # AST yazdırma
+        print_ast(result)
+        
+    except Exception as e:
+        print(f"Parsing Error: {e}")
+
+    print("=" * 60)

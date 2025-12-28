@@ -94,7 +94,7 @@ class ReturnStatement(AST):
 class BinaryOp(AST):
     def __init__(self, sol, op, sag):
         self.sol = sol
-        self.op = op  # The token string, e.g., '+', '==', '&&'
+        self.op = op  # Token string, e.g., '+', '==', '&&'
         self.sag = sag
 
     def __repr__(self):
